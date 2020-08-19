@@ -2,7 +2,7 @@
 # This file is used to extract ammonia, temperature, & pH values from a given report.#
 #                                                                                    #
 # It can be run by opening a Python terminal & entering:                             #
-# "get_njpdes_values.py <file_name.csv>"                                             #
+# "extract_report_values.py <file_name.csv>"                                         #
 #                                                                                    #
 # without the double quotes & where <file_name.csv> is the file you want to extract  # 
 # values from. Results will be saved in a new .csv file with the name:               #
@@ -11,6 +11,44 @@
 ######################################################################################
 
 import sys
+
+def check_clean(this_dict):
+    """
+    Spot check a dictionary representing a report file & update values for processing.
+
+    Args:
+        this_dict - dictionary; to be spot checked & values updated.
+
+    Returns:
+        result - dictionary; updated version of this_dict.
+    """
+
+    if len(this_dict.items()) <= 0:
+        raise ValueError("ERROR\nCannot find rows for processing. Please inspect the file for possible issues.")
+
+    #enforce data types
+    edit_count = 0
+    for line_num, values_dict in this_dict.items():
+        for entry in [
+            "sample point description",
+            "dmr parameter description abbrv.",
+            "concentrated average stat base",
+            "concentration maximum stat base"]:
+
+            print(f"Before: #{values_dict[entry]}#")
+            
+            if (values_dict[entry].isspace()) or (len(values_dict[entry]) == 0):
+                values_dict[entry] = None
+                edit_count += 1
+                continue
+            if not values_dict[entry].isalnum():
+                #attempt to remove all non alphanumeric values
+                values_dict[entry] = values_dict[entry].replace('"',"").replace("!","").replace("#","").replace("%","").replace("&","").replace("?","")
+                edit_count += 1
+            values_dict[entry] = values_dict[entry].strip()
+            print(f"After: #{values_dict[entry]}#") 
+
+    print(edit_count)       
 
 def load_report(this_file):
     """
@@ -26,22 +64,33 @@ def load_report(this_file):
 
     this_file_dict = {} #dictionary of dictionaries representing this_file; keys = line_num, values = dictionary
 
+    #columns we'll use during processing
+    THESE_KEYS = [
+        "Sample Point Description",         #string
+        "DMR Parameter Description Abbrv.", #string
+        "Concentrated Average Stat Base",   #string
+        "Concentration Maximum Stat Base",  #string
+        "Mon. Period Start Date",           #date
+        "Reported Value Concentration Avg", #float, CODE=N, (empty), <5
+        "Reported Value Concentration Max"  #float, CODE=N, (empty), <5
+    ]
+
     with open(this_file) as infile:
         HEADER = next(infile)
-        HEADER_split = HEADER.split(",")
+        HEADER_split = [i.lower() for i in HEADER.split(",")]
         line_num = 1 #start counting at first row of data
         for line in infile:
-            line_split = line.split(",")
             #get values for line, combine with header & zip together into line_dict
+            line_split = line.split(",")
             line_dict = dict(zip(HEADER_split, line_split))
-            this_file_dict[line_num] = line_dict
+            line_dict_sub = {key:value for key,value in line_dict.items() if key in [entry.lower() for entry in THESE_KEYS]} #only keep k-v if k is in THESE_COLS
+            this_file_dict[line_num] = line_dict_sub
             line_num += 1
 
-    #get subset of columns in this_file_dict
-
-    #spot check this_file_dict
-
-    #clean up values in this_file_dict (e.g. enforce data types)
+    #spot check this_file_dict & clean up values in this_file_dict (e.g. enforce data types)
+    check_clean(this_file_dict)
+    # test_dict = {}
+    # check_clean(test_dict)
 
 if __name__ == "__main__":
 
