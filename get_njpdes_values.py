@@ -10,6 +10,8 @@
 #                                                                                    #   
 ######################################################################################
 
+import sys
+
 def load_report(this_file):
     """
     Opens file specified by user & performs some simple quality checks.
@@ -21,8 +23,29 @@ def load_report(this_file):
         result - 2-tuple; if the report was loaded successfully (True, "Success") else (False, <error_message>)
 
     """
-    print("HERE")
 
+    this_file_dict = {} #this will be dictionary of dictionaries representing this_file; keys = line_num, values = dictionary
+
+    with open(this_file) as infile:
+        HEADER = next(infile)
+        HEADER_split = HEADER.split(",")
+        line_num = 1 #start counting at first row of data
+        for line in infile:
+            line_split = line.split(",")
+            #get values for line, combine with header value & add to line_dict
+            line_dict = dict(zip(HEADER_split, line_split))
+            line_num += 1
+            this_file_dict[line_num] = line_dict
+        print("END")
+
+    print(this_file_dict[1026])
 
 if __name__ == "__main__":
-    load_report()
+
+    if len(sys.argv) == 2:
+        try:
+            load_report(sys.argv[1])
+        except Exception as e:
+            print(e)
+    else:
+        print("Please enter a file name for processing.")
