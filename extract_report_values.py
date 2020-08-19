@@ -11,6 +11,7 @@
 ######################################################################################
 
 import sys
+import datetime
 
 def check_clean(this_dict):
     """
@@ -29,14 +30,15 @@ def check_clean(this_dict):
     #enforce data types
     edit_count = 0
     for line_num, values_dict in this_dict.items():
+
+        #string values
         for entry in [
             "sample point description",
             "dmr parameter description abbrv.",
             "concentrated average stat base",
-            "concentration maximum stat base"]:
-
-            print(f"Before: #{values_dict[entry]}#")
-            
+            "concentration maximum stat base"
+        ]:
+            # print(f"Before:{entry}#{values_dict[entry]}#")
             if (values_dict[entry].isspace()) or (len(values_dict[entry]) == 0):
                 values_dict[entry] = None
                 edit_count += 1
@@ -45,8 +47,35 @@ def check_clean(this_dict):
                 #attempt to remove all non alphanumeric values
                 values_dict[entry] = values_dict[entry].replace('"',"").replace("!","").replace("#","").replace("%","").replace("&","").replace("?","")
                 edit_count += 1
-            values_dict[entry] = values_dict[entry].strip()
-            print(f"After: #{values_dict[entry]}#") 
+
+            values_dict[entry] = values_dict[entry].strip().lower()
+            # print(f"After:{entry}#{values_dict[entry]}#")
+
+        #date values
+        for entry in ["mon. period start date"]:
+            # print(f"Before:#{values_dict[entry]}#")
+            if len(values_dict[entry]) == 0:
+                values_dict[entry] = None
+                edit_count += 1
+            else:
+                values_dict[entry] = datetime.datetime.strptime(values_dict[entry], "%m/%d/%Y %H:%M")
+            # print(f"After:#{values_dict[entry]}#")
+
+        #float values
+        for entry in ["reported value concentration avg", "reported value concentration max"]:
+            print(f"Before:{entry}#{values_dict[entry]}#")
+            if (values_dict[entry] == "CODE=N") or (values_dict[entry] == "(empty)") or (len(values_dict[entry]) == 0):
+                values_dict[entry] = None
+                edit_count += 1
+            else:
+                try:
+                    values_dict[entry] = float(values_dict[entry])
+                except Exception as e:
+                    print("*"*8)
+                    print(line_num, e)
+                    print("*"*8)
+
+            print(f"After:{entry}#{values_dict[entry]}#")
 
     print(edit_count)       
 
@@ -88,9 +117,8 @@ def load_report(this_file):
             line_num += 1
 
     #spot check this_file_dict & clean up values in this_file_dict (e.g. enforce data types)
-    check_clean(this_file_dict)
-    # test_dict = {}
-    # check_clean(test_dict)
+    # check_clean(this_file_dict)
+    #! Spot check dict entries for completeness (e.g. line_num = 823, 824, 836, 1140, 1141, 1142)
 
 if __name__ == "__main__":
 
