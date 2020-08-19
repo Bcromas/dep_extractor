@@ -24,7 +24,7 @@ def load_report(this_file):
 
     """
 
-    this_file_dict = {} #this will be dictionary of dictionaries representing this_file; keys = line_num, values = dictionary
+    this_file_dict = {} #dictionary of dictionaries representing this_file; keys = line_num, values = dictionary
 
     with open(this_file) as infile:
         HEADER = next(infile)
@@ -32,13 +32,16 @@ def load_report(this_file):
         line_num = 1 #start counting at first row of data
         for line in infile:
             line_split = line.split(",")
-            #get values for line, combine with header value & add to line_dict
+            #get values for line, combine with header & zip together into line_dict
             line_dict = dict(zip(HEADER_split, line_split))
-            line_num += 1
             this_file_dict[line_num] = line_dict
-        print("END")
+            line_num += 1
 
-    print(this_file_dict[1026])
+    #get subset of columns in this_file_dict
+
+    #spot check this_file_dict
+
+    #clean up values in this_file_dict (e.g. enforce data types)
 
 if __name__ == "__main__":
 
