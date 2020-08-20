@@ -11,7 +11,10 @@
 ######################################################################################
 
 import sys
+import csv
 import datetime
+import json #* for testing/writing out dict to file; can remove later
+import copy
 
 def check_clean(this_dict):
     """
@@ -21,15 +24,16 @@ def check_clean(this_dict):
         this_dict - dictionary; to be spot checked & values updated.
 
     Returns:
-        result - dictionary; updated version of this_dict.
+        result - dictionary; edited version of this_dict.
     """
+    result = copy.deepcopy(this_dict)
 
-    if len(this_dict.items()) <= 0:
-        raise ValueError("ERROR\nCannot find rows for processing. Please inspect the file for possible issues.")
+    if len(result.items()) <= 0:
+        raise ValueError("\nERROR: Cannot find rows for processing. Please inspect the file for possible issues.\n")
 
     #enforce data types
     edit_count = 0
-    for line_num, values_dict in this_dict.items():
+    for line_num, values_dict in result.items():
 
         #string values
         for entry in [
@@ -43,10 +47,10 @@ def check_clean(this_dict):
                 values_dict[entry] = None
                 edit_count += 1
                 continue
-            if not values_dict[entry].isalnum():
-                #attempt to remove all non alphanumeric values
-                values_dict[entry] = values_dict[entry].replace('"',"").replace("!","").replace("#","").replace("%","").replace("&","").replace("?","")
-                edit_count += 1
+            # if not values_dict[entry].isalnum(): #? not necessary
+            #     #attempt to remove all non alphanumeric values
+            #     values_dict[entry] = values_dict[entry].replace('"',"").replace("!","").replace("#","").replace("%","").replace("&","").replace("?","") #! don't remove commas they're expected content
+            #     edit_count += 1
 
             values_dict[entry] = values_dict[entry].strip().lower()
             # print(f"After:{entry}#{values_dict[entry]}#")
@@ -63,21 +67,22 @@ def check_clean(this_dict):
 
         #float values
         for entry in ["reported value concentration avg", "reported value concentration max"]:
-            print(f"Before:{entry}#{values_dict[entry]}#")
+            # print(f"Before:{entry}#{values_dict[entry]}#")
             if (values_dict[entry] == "CODE=N") or (values_dict[entry] == "(empty)") or (len(values_dict[entry]) == 0):
                 values_dict[entry] = None
                 edit_count += 1
             else:
                 try:
                     values_dict[entry] = float(values_dict[entry])
-                except Exception as e:
-                    print("*"*8)
-                    print(line_num, e)
+                except Exception as e: #! how to handle conversion of exceptions? '<5', 'PA682', or errors like '15..5'?
+                    print(entry, e)
                     print("*"*8)
 
-            print(f"After:{entry}#{values_dict[entry]}#")
+            # print(f"After:{entry}#{values_dict[entry]}#")
 
-    print(edit_count)       
+    # print(f"edit_count: {edit_count}")
+
+    return result
 
 def load_report(this_file):
     """
@@ -104,21 +109,34 @@ def load_report(this_file):
         "Reported Value Concentration Max"  #float, CODE=N, (empty), <5
     ]
 
-    with open(this_file) as infile:
+    # with open(this_file, "r") as infile:
+    #     HEADER = next(infile)
+    #     HEADER_split = [i.lower() for i in HEADER.split(",")]
+    #     line_num = 2 #to keep numbering consistent w csv file
+    #     for line in infile:
+    #         #get values for line, combine with header & zip together into line_dict
+    #         line_split = line.split(",")
+    #         line_dict = dict(zip(HEADER_split, line_split))
+    #         line_dict_sub = {key:value for key,value in line_dict.items() if key in [entry.lower() for entry in THESE_KEYS]} #only keep k-v if k is in THESE_COLS
+    #         this_file_dict[line_num] = line_dict_sub
+    #         line_num += 1
+    with open(this_file, "r") as infile:
         HEADER = next(infile)
         HEADER_split = [i.lower() for i in HEADER.split(",")]
-        line_num = 1 #start counting at first row of data
-        for line in infile:
-            #get values for line, combine with header & zip together into line_dict
-            line_split = line.split(",")
-            line_dict = dict(zip(HEADER_split, line_split))
+        line_num = 2 #to keep numbering consistent w csv file
+        reader = csv.reader(infile) #load rest of lines with reader
+        for row in reader:
+            line_dict = dict(zip(HEADER_split, row))
             line_dict_sub = {key:value for key,value in line_dict.items() if key in [entry.lower() for entry in THESE_KEYS]} #only keep k-v if k is in THESE_COLS
             this_file_dict[line_num] = line_dict_sub
             line_num += 1
 
     #spot check this_file_dict & clean up values in this_file_dict (e.g. enforce data types)
-    # check_clean(this_file_dict)
-    #! Spot check dict entries for completeness (e.g. line_num = 823, 824, 836, 1140, 1141, 1142)
+    check_clean(this_file_dict)
+
+    # with open("this_file_dict.txt", "w") as outfile:
+    #     outfile.write(json.dumps(this_file_dict, indent=4, sort_keys=True)) #* used for spot checking loading of file
+
 
 if __name__ == "__main__":
 
@@ -128,4 +146,4 @@ if __name__ == "__main__":
         except Exception as e:
             print(e)
     else:
-        print("Please enter a file name for processing.")
+        print("\nERROR: Please enter a file name for processing.\n")
