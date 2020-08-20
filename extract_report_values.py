@@ -33,7 +33,7 @@ def check_clean(this_dict):
 
     #enforce data types
     edit_count = 0
-    for line_num, values_dict in result.items():
+    for values_dict in result.values():
 
         #string values
         for entry in [
@@ -42,32 +42,24 @@ def check_clean(this_dict):
             "concentrated average stat base",
             "concentration maximum stat base"
         ]:
-            # print(f"Before:{entry}#{values_dict[entry]}#")
+
             if (values_dict[entry].isspace()) or (len(values_dict[entry]) == 0):
                 values_dict[entry] = None
                 edit_count += 1
                 continue
-            # if not values_dict[entry].isalnum(): #? not necessary
-            #     #attempt to remove all non alphanumeric values
-            #     values_dict[entry] = values_dict[entry].replace('"',"").replace("!","").replace("#","").replace("%","").replace("&","").replace("?","") #! don't remove commas they're expected content
-            #     edit_count += 1
 
             values_dict[entry] = values_dict[entry].strip().lower()
-            # print(f"After:{entry}#{values_dict[entry]}#")
 
         #date values
         for entry in ["mon. period start date"]:
-            # print(f"Before:#{values_dict[entry]}#")
             if len(values_dict[entry]) == 0:
                 values_dict[entry] = None
                 edit_count += 1
             else:
                 values_dict[entry] = datetime.datetime.strptime(values_dict[entry], "%m/%d/%Y %H:%M")
-            # print(f"After:#{values_dict[entry]}#")
 
         #float values
         for entry in ["reported value concentration avg", "reported value concentration max"]:
-            # print(f"Before:{entry}#{values_dict[entry]}#")
             if (values_dict[entry] == "CODE=N") or (values_dict[entry] == "(empty)") or (len(values_dict[entry]) == 0):
                 values_dict[entry] = None
                 edit_count += 1
@@ -77,10 +69,6 @@ def check_clean(this_dict):
                 except Exception as e: #! how to handle conversion of exceptions? '<5', 'PA682', or errors like '15..5'?
                     print(entry, e)
                     print("*"*8)
-
-            # print(f"After:{entry}#{values_dict[entry]}#")
-
-    # print(f"edit_count: {edit_count}")
 
     return result
 
@@ -92,8 +80,7 @@ def load_report(this_file):
         this_file - string; the file name provided by user through the command line.
 
     Returns:
-        result - 2-tuple; if the report was loaded successfully (True, "Success") else (False, <error_message>)
-
+        result - dictionary; a cleaned, updated, & shortened dictionary based on this_file.
     """
 
     this_file_dict = {} #dictionary of dictionaries representing this_file; keys = line_num, values = dictionary
@@ -109,17 +96,6 @@ def load_report(this_file):
         "Reported Value Concentration Max"  #float, CODE=N, (empty), <5
     ]
 
-    # with open(this_file, "r") as infile:
-    #     HEADER = next(infile)
-    #     HEADER_split = [i.lower() for i in HEADER.split(",")]
-    #     line_num = 2 #to keep numbering consistent w csv file
-    #     for line in infile:
-    #         #get values for line, combine with header & zip together into line_dict
-    #         line_split = line.split(",")
-    #         line_dict = dict(zip(HEADER_split, line_split))
-    #         line_dict_sub = {key:value for key,value in line_dict.items() if key in [entry.lower() for entry in THESE_KEYS]} #only keep k-v if k is in THESE_COLS
-    #         this_file_dict[line_num] = line_dict_sub
-    #         line_num += 1
     with open(this_file, "r") as infile:
         HEADER = next(infile)
         HEADER_split = [i.lower() for i in HEADER.split(",")]
@@ -131,18 +107,60 @@ def load_report(this_file):
             this_file_dict[line_num] = line_dict_sub
             line_num += 1
 
-    #spot check this_file_dict & clean up values in this_file_dict (e.g. enforce data types)
-    check_clean(this_file_dict)
-
     # with open("this_file_dict.txt", "w") as outfile:
     #     outfile.write(json.dumps(this_file_dict, indent=4, sort_keys=True)) #* used for spot checking loading of file
 
+    #spot check this_file_dict & clean up values in this_file_dict (e.g. enforce data types)
+    result = check_clean(this_file_dict)
+
+    # with open("result.txt", "w") as outfile:
+    #     outfile.write(json.dumps(result, indent=4, sort_keys=True, default=str)) #* used for spot checking result of check_clean()
+
+    return result
+
+def get_values(dict_clean):
+    """
+    Retrieve the values for ammonia, temperature, and pH.
+
+    Args:
+        dict_clean - dictionary; contains a cleaned & updated subset of values from original input file.
+
+    Returns:
+        result - 
+    """
+
+    #get subset of entries where 'sample point description' == "effluent gross value"
+    dict_clean_sub = {}
+    for main_key, main_value in dict_clean.items():
+        if main_value["sample point description"] == "effluent gross value":
+            dict_clean_sub[main_key] = main_value
+
+    #get temperature values
+    temp_dict = {}
+    for main_key, main_value in dict_clean_sub.items():
+        if (main_value["dmr parameter description abbrv."] == 'temperature,  oc') & (main_value["concentrated average stat base"] == "01moav"):
+            temp_dict[main_key] = main_value
+
+    #TODO implement rolling window/collection of values
+
+    #get pH values
+    #TODO filter by 'dmr parameter description abbrv' == 'pH'
+
+    #get ammonia values
+    #TODO filter by 'dmr parameter description abbrv' == 'Nitrogen, Ammonia Total (as N)'
+
+def export_results(found_values):
+    """
+    Format & export the results to a .csv file. 
+    """
+    pass
 
 if __name__ == "__main__":
 
     if len(sys.argv) == 2:
         try:
-            load_report(sys.argv[1])
+            get_values(load_report(sys.argv[1]))
+            #TODO call export_results() here
         except Exception as e:
             print(e)
     else:
