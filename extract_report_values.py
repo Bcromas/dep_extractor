@@ -136,15 +136,30 @@ def get_values(dict_clean):
             dict_clean_sub[main_key] = main_value
 
     #get temperature values
-    temp_dict = {}
+    temp_summer_list = [] #Jun to Sep; max 20 values
+    temp_winter_list = [] #Apr & Nov; max 10 values
     for main_key, main_value in dict_clean_sub.items():
-        if (main_value["dmr parameter description abbrv."] == 'temperature,  oc') & (main_value["concentrated average stat base"] == "01moav"):
-            temp_dict[main_key] = main_value
+        if (main_value["dmr parameter description abbrv."] == "temperature,  oc") & (main_value["concentrated average stat base"] == "01moav"):
+            if 6 <= main_value["mon. period start date"].month <= 9:
+                temp_summer_list.append(main_value)
+            elif (main_value["mon. period start date"].month == 4) or (main_value["mon. period start date"].month == 11):
+                temp_winter_list.append(main_value)
+    
+    temp_summer_list_sort = sorted(temp_summer_list, key=lambda x: x["mon. period start date"], reverse=True)
+    temp_summer_values = [i["reported value concentration avg"] for i in temp_summer_list_sort][:20] #* can capture more dict values here to validate results
 
-    #TODO implement rolling window/collection of values
+    temp_winter_list_sort = sorted(temp_winter_list, key=lambda x: x["mon. period start date"], reverse=True)
+    temp_winter_values = [i["reported value concentration avg"] for i in temp_winter_list_sort][:10] #* can capture more dict values here to validate results
 
     #get pH values
-    #TODO filter by 'dmr parameter description abbrv' == 'pH'
+    ph_summer_list = [] #May to Oct; max 30 values
+    ph_winter_list = [] #Nov to Apr; max 30 values
+    for main_key, main_value in dict_clean_sub.items():
+        if (main_value["dmr parameter description abbrv."] == "ph") & (main_value["concentrated average stat base"] == "01rpmx"):
+            if 5 <= main_value["mon. period start date"].month <= 10:
+                ph_summer_list.append(main_value)
+            # elif X <= main_value["mon. period start date"].month <= X: #! capture this period with an 'or' & two subsets of date windows (Nov to Dec & Jan to Apri)
+                # ph_winter_list.append(main_value)
 
     #get ammonia values
     #TODO filter by 'dmr parameter description abbrv' == 'Nitrogen, Ammonia Total (as N)'
