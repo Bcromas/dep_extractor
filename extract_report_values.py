@@ -267,3 +267,7 @@ if __name__ == "__main__":
             print(e)
     else:
         print("\nERROR: Please enter a file name for processing.\n")
+
+#TODO create test cases to check for scenarios where windows cannot find enough values & where values are blank
+#TODO fix floats with double decimals
+#TODO adjust output format so acute & chronic values are on separate lines (easier to copy)
