@@ -130,13 +130,14 @@ def get_values(dict_clean):
         result - 
     """
 
-    #get subset of entries where 'sample point description' == "effluent gross value"
     dict_clean_sub = {}
     for main_key, main_value in dict_clean.items():
         if main_value["sample point description"] == "effluent gross value":
             dict_clean_sub[main_key] = main_value
 
-    #get temperature values
+    ######################## 
+    ## Temperature Values ##
+
     temp_summer_list = [] #Jun to Sep; max 20 values
     temp_winter_list = [] #Apr & Nov; max 10 values
     for main_key, main_value in dict_clean_sub.items():
@@ -150,8 +151,10 @@ def get_values(dict_clean):
     temp_winter_list_sort = sorted(temp_winter_list, key=lambda x: x["mon. period start date"], reverse=True)
     temp_summer_values = [i["reported value concentration avg"] for i in temp_summer_list_sort][:20] #* can capture more dict values here to validate results
     temp_winter_values = [i["reported value concentration avg"] for i in temp_winter_list_sort][:10]
+    
+    ###############
+    ## pH Values ##
 
-    #get pH values
     ph_summer_list = [] #May to Oct; max 30 values
     ph_winter_list = [] #Nov to Apr; max 30 values
     for main_key, main_value in dict_clean_sub.items():
@@ -166,7 +169,11 @@ def get_values(dict_clean):
     ph_summer_values = [i["reported value concentration max"] for i in ph_summer_list_sort][:30] #* can capture more dict values here to validate results
     ph_winter_values = [i["reported value concentration max"] for i in ph_winter_list_sort][:30]
 
-    #get ammonia values
+    ####################
+    ## Ammonia Values ##
+    #TODO streamline code below, if user can understand simplified version
+
+    #chronic values
     n_summer_chronic_list = [] #May to Oct; max 18 values
     n_winter_chronic_list = [] #Nov to Apr; max 18 values
     for main_key, main_value in dict_clean_sub.items():
@@ -180,26 +187,82 @@ def get_values(dict_clean):
     n_winter_chronic_list_sort = sorted(n_winter_chronic_list, key=lambda x: x["mon. period start date"], reverse=True)
     n_summer_chronic_values = [i["reported value concentration avg"] for i in n_summer_chronic_list_sort][:18] #* can capture more dict values here to validate results
     n_winter_chronic_values = [i["reported value concentration avg"] for i in n_winter_chronic_list_sort][:18]
-    n_summer_chronic_max = max(n_summer_chronic_values) #TODO treat values as numbers, or filter out entries like 'CODE=N'
-    n_winter_chronic_max = max(n_winter_chronic_values)
-    raise ValueError("Address issue with max value")
+    
+    n_summer_chronic_nums = []
+    for i in n_summer_chronic_values:
+        try:
+            n_summer_chronic_nums.append(float(i))
+        except:
+            n_summer_chronic_nums.append(0.0)
 
-    print(n_summer_chronic_values)
+    n_winter_chronic_nums = []
+    for i in n_winter_chronic_values:
+        try:
+            n_winter_chronic_nums.append(float(i))
+        except:
+            n_winter_chronic_nums.append(0.0)
+    
+    n_summer_chronic_max = max(n_summer_chronic_nums)
+    n_winter_chronic_max = max(n_winter_chronic_nums)
 
-    print(n_summer_chronic_max, n_winter_chronic_max)
+    #acute values
+    n_summer_acute_list = [] #May to Oct; max 18 values
+    n_winter_acute_list = [] #Nov to Apr; max 18 values
+    for main_key, main_value in dict_clean_sub.items():
+        if (main_value["dmr parameter description abbrv."] == "nitrogen, ammonia total (as n)") & (main_value["concentration maximum stat base"] == "01damx"): #max = "acute"
+            if 5 <= main_value["mon. period start date"].month <= 10:
+                n_summer_acute_list.append(main_value)
+            elif (11 <= main_value["mon. period start date"].month <= 12) or (1 <= main_value["mon. period start date"].month <= 4):
+                n_winter_acute_list.append(main_value)
 
-def export_results(found_values):
+    n_summer_acute_list_sort = sorted(n_summer_acute_list, key=lambda x: x["mon. period start date"], reverse=True)
+    n_winter_acute_list_sort = sorted(n_winter_acute_list, key=lambda x: x["mon. period start date"], reverse=True)
+    n_summer_acute_values = [i["reported value concentration max"] for i in n_summer_acute_list_sort][:18] #* can capture more dict values here to validate results
+    n_winter_acute_values = [i["reported value concentration max"] for i in n_winter_acute_list_sort][:18]
+    
+    n_summer_acute_nums = []
+    for i in n_summer_acute_values:
+        try:
+            n_summer_acute_nums.append(float(i))
+        except:
+            n_summer_acute_nums.append(0.0)
+
+    n_winter_acute_nums = []
+    for i in n_winter_acute_values:
+        try:
+            n_winter_acute_nums.append(float(i))
+        except:
+            n_winter_acute_nums.append(0.0)
+    
+    n_summer_acute_max = max(n_summer_acute_nums)
+    n_winter_acute_max = max(n_winter_acute_nums)
+
+    result = {
+        "pH summer": ph_summer_values,
+        "pH winter": ph_winter_values,
+        "Temperature summer": temp_summer_values,
+        "Temperature winter": temp_winter_values,
+        "Ammonia summer acute max": n_summer_acute_max,
+        "Ammonia summer chronic max": n_summer_chronic_max,
+        "Ammonia winter acute max": n_winter_acute_max,
+        "Ammonia winter chronic max": n_winter_chronic_max
+    }
+
+    return result
+
+def export_results(found_values, orig_fname):
     """
     Format & export the results to a .csv file. 
     """
-    pass
+    with open(f"Export_for-{orig_fname}", "w") as outfile:
+        outfile.write(json.dumps(found_values, indent=4, sort_keys=False, default=float))
 
 if __name__ == "__main__":
 
     if len(sys.argv) == 2:
         try:
-            get_values(load_report(sys.argv[1]))
-            #TODO call export_results() here
+            fname = sys.argv[1]
+            export_results(get_values(load_report(fname)), orig_fname=fname)
         except Exception as e:
             print(e)
     else:
