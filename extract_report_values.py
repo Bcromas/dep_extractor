@@ -256,7 +256,7 @@ def get_values(dict_clean):
         "Ammonia summer acute max": n_summer_acute_max,
         "Ammonia summer acute values": n_summer_acute_values,
         "Ammonia summer chronic max": n_summer_chronic_max,
-        "Ammonica summer chronic values": n_summer_chronic_values,
+        "Ammonia summer chronic values": n_summer_chronic_values,
         "Ammonia winter acute max": n_winter_acute_max,
         "Ammonia winter acute values": n_winter_acute_values,
         "Ammonia winter chronic max": n_winter_chronic_max,
@@ -273,7 +273,47 @@ def export_values(found_values, orig_fname):
     stamp = f"{now.year}_{now.month}_{now.day}_{now.hour}{now.minute}"
 
     with open(f"{stamp}_VALUES_FOR-{orig_fname}", "w") as outfile:
-        outfile.write(json.dumps(found_values, indent=4, sort_keys=False, default=float))
+        # outfile.write(json.dumps(found_values, indent=4, sort_keys=False, default=float))
+        outfile.write(f"Export of values from: {orig_fname}\n")
+        outfile.write(f"Dates used: {found_values['Earliest date']} to {found_values['Most recent date']}")
+        outfile.write("\n\n")
+
+        outfile.write("pH summer values")
+        counter = 1
+        for i in found_values["pH summer values"]:
+            outfile.write(f"\n,{counter}:,{i}")
+            counter += 1
+        outfile.write("\nn")
+
+        outfile.write("pH winter values")
+        counter = 1
+        for i in found_values["pH winter values"]:
+            outfile.write(f"\n,{counter}:,{i}")
+            counter += 1
+        outfile.write("\n\n")
+
+        outfile.write("Temperature summer values")
+        counter = 1
+        for i in found_values["Temperature summer values"]:
+            outfile.write(f"\n,{counter}:,{i}")
+            counter += 1
+        outfile.write("\n\n")
+
+        outfile.write("Temperature winter values")
+        counter = 1
+        for i in found_values["Temperature winter values"]:
+            outfile.write(f"\n,{counter}:,{i}")
+            counter += 1
+        outfile.write("\n\n")
+
+        outfile.write("Ammonia summer acute max,Ammonia summer chronic max,Ammonia winter acute max,Ammonia winter chronic max\n") #the four titles in a row
+        outfile.write(f"{found_values['Ammonia summer acute max']},{found_values['Ammonia summer chronic max']},{found_values['Ammonia winter acute max']},{found_values['Ammonia winter chronic max']}")
+        outfile.write("\n\n")
+
+        for i in range(18):
+            outfile.write(f"{found_values['Ammonia summer acute values'][i]},{found_values['Ammonia summer chronic values'][i]},{found_values['Ammonia winter acute values'][i]},{found_values['Ammonia winter chronic values'][i]}")
+            outfile.write("\n")
+        
 
 if __name__ == "__main__":
 
@@ -281,12 +321,6 @@ if __name__ == "__main__":
         try:
             fname = sys.argv[1]
             export_values(get_values(load_report(fname)), orig_fname=fname)
-            # export_values(
-            #     get_values(
-            #         load_report(fname)
-            #     )
-            #     , orig_fname=fname
-            # )
         except Exception as e:
             print(e)
     else:
@@ -294,4 +328,3 @@ if __name__ == "__main__":
 
 #TODO create test cases to check for scenarios where windows cannot find enough values & where values are blank
 #TODO fix floats with double decimals
-#TODO adjust output format so acute & chronic values are on separate lines (easier to copy)
