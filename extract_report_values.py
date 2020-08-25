@@ -6,7 +6,7 @@
 #                                                                                    #
 # without the double quotes & where <file_name.csv> is the file you want to extract  # 
 # values from. Results will be saved in a new .csv file with the name:               #
-# <file_name>_values.csv                                                             #
+# <datetime>_VALUES_FOR-<file_name>.csv                                              #
 #                                                                                    #   
 ######################################################################################
 
@@ -127,8 +127,10 @@ def get_values(dict_clean):
         dict_clean - dictionary; contains a cleaned & updated subset of values from original input file.
 
     Returns:
-        result - 
+        result - dictionary; the values retrieved from dict_clean.
     """
+
+    dates_used = [] # To hold the dates for all temp. & pH data points used
 
     dict_clean_sub = {}
     for main_key, main_value in dict_clean.items():
@@ -150,7 +152,9 @@ def get_values(dict_clean):
     temp_summer_list_sort = sorted(temp_summer_list, key=lambda x: x["mon. period start date"], reverse=True)
     temp_winter_list_sort = sorted(temp_winter_list, key=lambda x: x["mon. period start date"], reverse=True)
     temp_summer_values = [i["reported value concentration avg"] for i in temp_summer_list_sort][:20] #* can capture more dict values here to validate results
+    dates_used.extend([i["mon. period start date"] for i in temp_summer_list_sort][:20]) # collect the dates related to the values captured
     temp_winter_values = [i["reported value concentration avg"] for i in temp_winter_list_sort][:10]
+    dates_used.extend([i["mon. period start date"] for i in temp_winter_list_sort][:10])
     
     ###############
     ## pH Values ##
@@ -167,7 +171,9 @@ def get_values(dict_clean):
     ph_summer_list_sort = sorted(ph_summer_list, key=lambda x: x["mon. period start date"], reverse=True)
     ph_winter_list_sort = sorted(ph_winter_list, key=lambda x: x["mon. period start date"], reverse=True)
     ph_summer_values = [i["reported value concentration max"] for i in ph_summer_list_sort][:30] #* can capture more dict values here to validate results
+    dates_used.extend([i["mon. period start date"] for i in ph_summer_list_sort][:30]) # collect the dates related to the values captured
     ph_winter_values = [i["reported value concentration max"] for i in ph_winter_list_sort][:30]
+    dates_used.extend([i["mon. period start date"] for i in ph_winter_list_sort][:30])
 
     ####################
     ## Ammonia Values ##
@@ -237,24 +243,36 @@ def get_values(dict_clean):
     n_summer_acute_max = max(n_summer_acute_nums)
     n_winter_acute_max = max(n_winter_acute_nums)
 
+    min_date = min(dates_used).date()
+    max_date = max(dates_used).date()
+
     result = {
-        "pH summer": ph_summer_values,
-        "pH winter": ph_winter_values,
-        "Temperature summer": temp_summer_values,
-        "Temperature winter": temp_winter_values,
+        "Earliest date": str(min_date),
+        "Most recent date": str(max_date),
+        "pH summer values": ph_summer_values,
+        "pH winter values": ph_winter_values,
+        "Temperature summer values": temp_summer_values,
+        "Temperature winter values": temp_winter_values,
         "Ammonia summer acute max": n_summer_acute_max,
+        "Ammonia summer acute values": n_summer_acute_values,
         "Ammonia summer chronic max": n_summer_chronic_max,
+        "Ammonica summer chronic values": n_summer_chronic_values,
         "Ammonia winter acute max": n_winter_acute_max,
-        "Ammonia winter chronic max": n_winter_chronic_max
+        "Ammonia winter acute values": n_winter_acute_values,
+        "Ammonia winter chronic max": n_winter_chronic_max,
+        "Ammonia winter chronic values": n_winter_chronic_values
     }
 
     return result
 
-def export_results(found_values, orig_fname):
+def export_values(found_values, orig_fname):
     """
     Format & export the results to a .csv file. 
     """
-    with open(f"Export_for-{orig_fname}", "w") as outfile:
+    now = datetime.datetime.now()
+    stamp = f"{now.year}_{now.month}_{now.day}_{now.hour}{now.minute}"
+
+    with open(f"{stamp}_VALUES_FOR-{orig_fname}", "w") as outfile:
         outfile.write(json.dumps(found_values, indent=4, sort_keys=False, default=float))
 
 if __name__ == "__main__":
@@ -262,7 +280,13 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         try:
             fname = sys.argv[1]
-            export_results(get_values(load_report(fname)), orig_fname=fname)
+            export_values(get_values(load_report(fname)), orig_fname=fname)
+            # export_values(
+            #     get_values(
+            #         load_report(fname)
+            #     )
+            #     , orig_fname=fname
+            # )
         except Exception as e:
             print(e)
     else:
