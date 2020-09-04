@@ -12,6 +12,7 @@
 
 import sys
 import csv
+import collections
 import datetime
 import json #* for testing/writing out dict to file; can remove later
 import copy
@@ -93,31 +94,40 @@ def load_report(this_file):
         "Concentrated Average Stat Base",   #string
         "Concentration Maximum Stat Base",  #string
         "Mon. Period Start Date",           #date
-        "Reported Value Concentration Avg", #float, CODE=N, (empty), <5
-        "Reported Value Concentration Max"  #float, CODE=N, (empty), <5
+        "Reported Value Concentration Avg", #float
+        "Reported Value Concentration Max"  #float
     ]
 
     with open(this_file, "r") as infile:
         HEADER = next(infile)
         HEADER_split = [i.lower() for i in HEADER.split(",")]
-        line_num = 2 #to keep numbering consistent w csv file
-        reader = csv.reader(infile) #load rest of lines with reader
+
+        #* verify all keys are in header
+        for entry in THESE_KEYS:
+            if entry.lower() in HEADER_split:
+                continue
+            else:
+                raise ValueError(f"{entry} not found in {this_file}")
+
+        line_num = 2 #* to keep numbering consistent w csv file
+        reader = csv.reader(infile)
         for row in reader:
             line_dict = dict(zip(HEADER_split, row))
-            line_dict_sub = {key:value for key,value in line_dict.items() if key in [entry.lower() for entry in THESE_KEYS]} #only keep k-v if k is in THESE_COLS
+            line_dict_sub = {key:value for key,value in line_dict.items() if key in [entry.lower() for entry in THESE_KEYS]} #* only keep k-v if k is in THESE_COLS
             this_file_dict[line_num] = line_dict_sub
             line_num += 1
 
-    # with open("this_file_dict.txt", "w") as outfile:
-    #     outfile.write(json.dumps(this_file_dict, indent=4, sort_keys=True)) #* used for spot checking loading of file
+        #* verify each col has at least one value in it
+        c = collections.Counter()
+        for row, entry in this_file_dict.items():
+            for k, v in entry.items():
+                if len(v)>0:
+                    c.update([k])
+        for entry in THESE_KEYS:
+            if c[entry.lower()]==0:
+                raise ValueError(f"No values found in '{entry}' column.")
 
-    #spot check this_file_dict & clean up values in this_file_dict (e.g. enforce data types)
-    result = check_clean(this_file_dict)
-
-    # with open("result.txt", "w") as outfile:
-    #     outfile.write(json.dumps(result, indent=4, sort_keys=True, default=str)) #* used for spot checking result of check_clean()
-
-    return result
+    return this_file_dict
 
 def get_values(dict_clean):
     """
@@ -320,7 +330,8 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         try:
             fname = sys.argv[1]
-            export_values(get_values(load_report(fname)), orig_fname=fname)
+            # export_values(get_values(load_report(fname)), orig_fname=fname)
+            export_values(get_values(check_clean(load_report(fname))), orig_fname=fname)
         except Exception as e:
             print(e)
     else:
