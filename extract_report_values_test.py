@@ -3,6 +3,10 @@ import random
 from extract_report_values import *
 
 class Test_load_report(unittest.TestCase):
+    """
+    Test load_report() functionality for a "good" csv and a number of problematic scenarios 
+    including missing, misspelled, and empty columns.
+    """
 
     def test_good_csv(self):
         csv = "test_csvs/test.csv"
@@ -39,6 +43,59 @@ class Test_load_report(unittest.TestCase):
 
         csv = "test_csvs/test_empty_col.csv" # Col 'Mon. Period Start Date' is empty
         with self.assertRaises(ValueError):
-            load_report(csv)    
+            load_report(csv)
+
+class Test_check_clean(unittest.TestCase):
+    """
+    Test check_clean().
+    """
+
+    def test_good_dict(self):
+
+        this_dict = {
+            1211:
+            {
+                'mon. period start date': '8/1/2016 0:00', 
+                'dmr parameter description abbrv.': 'Flow, In Conduit or Thru Treatment Plant', 
+                'sample point description': ' ', # space for a value
+                'reported value concentration avg': '', 
+                'concentrated average stat base': '', 
+                'reported value concentration max': '13', 
+                'concentration maximum stat base': '  0.9 ' # extra spaces
+            }
+        }
+        x = check_clean(this_dict)
+
+        self.assertIsInstance(x, dict) # returns a dict
+        self.assertGreater(len(x.keys()), 0) # dict isn't empty
+
+    def test_bad_date(self):
+        this_dict = {
+            1211:
+            {
+                'mon. period start date': '8/1/20', 
+                'dmr parameter description abbrv.': '', 
+                'sample point description': '',
+                'reported value concentration avg': '', 
+                'concentrated average stat base': '', 
+                'reported value concentration max': '', 
+                'concentration maximum stat base': ''
+            }
+        }
+
+        with self.assertRaises(ValueError):
+            check_clean(this_dict)
+
+class Test_get_values(unittest.TestCase):
+    """
+    Test get_values().
+    """
+    pass
+
+class Test_export_values(unittest.TestCase):
+    """
+    Test export_values().
+    """
+    pass
 
 unittest.main()

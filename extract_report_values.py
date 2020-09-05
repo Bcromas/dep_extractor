@@ -29,12 +29,8 @@ def check_clean(this_dict):
     """
     result = copy.deepcopy(this_dict)
 
-    if len(result.items()) <= 0:
-        raise ValueError("\nERROR: Cannot find rows for processing. Please inspect the file for possible issues.\n")
-
     #enforce data types
-    edit_count = 0
-    for line_num, values_dict in result.items():
+    for values_dict in result.values():
 
         #string values
         for entry in [
@@ -46,7 +42,6 @@ def check_clean(this_dict):
 
             if (values_dict[entry].isspace()) or (len(values_dict[entry]) == 0):
                 values_dict[entry] = None
-                edit_count += 1
                 continue
 
             values_dict[entry] = values_dict[entry].strip().lower()
@@ -57,21 +52,14 @@ def check_clean(this_dict):
                 values_dict[entry] = None
                 edit_count += 1
             else:
-                values_dict[entry] = datetime.datetime.strptime(values_dict[entry], "%m/%d/%Y %H:%M")
-
-        #float values
-        for entry in ["reported value concentration avg", "reported value concentration max"]:
-            # if (values_dict[entry] == "CODE=N") or (values_dict[entry] == "(empty)") or (len(values_dict[entry]) == 0):
-            #     values_dict[entry] = None
-            #     edit_count += 1
-            # else:
-            #     try:
-            #         values_dict[entry] = float(values_dict[entry])
-            #     except Exception as e: #! how to handle conversion of exceptions? '<5', 'PA682', or errors like '15..5'?
-            #         print(line_num, entry, e)
-            #         print("*"*8)
-            values_dict[entry] = values_dict[entry]
-
+                try:
+                    values_dict[entry] = datetime.datetime.strptime(values_dict[entry], "%m/%d/%Y %H:%M")
+                except:
+                    try:
+                        values_dict[entry] = datetime.datetime.strptime(values_dict[entry], "%m/%d/%Y") #* try without hours, mins
+                    except:
+                        raise ValueError("\nERROR: Cannot process value in Mon. Period Start Date.\nCheck source file.\n")
+        
     return result
 
 def load_report(this_file):
