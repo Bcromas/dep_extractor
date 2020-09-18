@@ -1,6 +1,6 @@
 # dep_extractor
 
-<img src="images/Factories Encroach on Natural Environment - Vector Image.png" width="300" height="200" />
+<img src="images/Factories Encroach on Natural Environment.png" width="300" height="200" />
 
 Image designed by [Wannapik](https://www.wannapik.com/vectors/28146)
 
