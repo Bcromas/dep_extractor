@@ -318,7 +318,6 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         try:
             fname = sys.argv[1]
-            # export_values(get_values(load_report(fname)), orig_fname=fname)
             export_values(get_values(check_clean(load_report(fname))), orig_fname=fname)
         except Exception as e:
             print(e)

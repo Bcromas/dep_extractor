@@ -47,7 +47,7 @@ class Test_load_report(unittest.TestCase):
 
 class Test_check_clean(unittest.TestCase):
     """
-    Test check_clean().
+    Test check_clean() functionality for a "good" dictionary and one with a problematic string for datetime conversion.
     """
 
     def test_good_dict(self):
@@ -55,13 +55,13 @@ class Test_check_clean(unittest.TestCase):
         this_dict = {
             1211:
             {
-                'mon. period start date': '8/1/2016 0:00', 
+                'mon. period start date': '8/1/2016', # no hours, mins
                 'dmr parameter description abbrv.': 'Flow, In Conduit or Thru Treatment Plant', 
                 'sample point description': ' ', # space for a value
                 'reported value concentration avg': '', 
                 'concentrated average stat base': '', 
                 'reported value concentration max': '13', 
-                'concentration maximum stat base': '  0.9 ' # extra spaces
+                'concentration maximum stat base': '  0.9 ' # extra spaces before & after
             }
         }
         x = check_clean(this_dict)
@@ -71,9 +71,9 @@ class Test_check_clean(unittest.TestCase):
 
     def test_bad_date(self):
         this_dict = {
-            1211:
+            1212:
             {
-                'mon. period start date': '8/1/20', 
+                'mon. period start date': '8/1/20', # problematic string
                 'dmr parameter description abbrv.': '', 
                 'sample point description': '',
                 'reported value concentration avg': '', 
@@ -90,7 +90,28 @@ class Test_get_values(unittest.TestCase):
     """
     Test get_values().
     """
-    pass
+
+    def test_bad_sample_pt_desc(self):
+        # create dict where either the col 'sample point description' doesn't have value of "effluent gross value"
+        this_dict = {
+            1211:
+            {
+                'mon. period start date': '8/1/2016',
+                'dmr parameter description abbrv.': 'Flow, In Conduit or Thru Treatment Plant', 
+                'sample point description': '', # missing val
+                'reported value concentration avg': '', 
+                'concentrated average stat base': '', 
+                'reported value concentration max': '13', 
+                'concentration maximum stat base': '0.9'
+            }
+        }
+        x = get_values(this_dict)
+        
+        self.assertIsInstance(x, dict) # returns a dict
+        self.assertGreater(len(x.keys()), 0) # dict isn't empty       
+
+    def test_short_input(self):
+        pass
 
 class Test_export_values(unittest.TestCase):
     """
@@ -98,4 +119,4 @@ class Test_export_values(unittest.TestCase):
     """
     pass
 
-unittest.main()
+unittest.main(verbosity=2)
