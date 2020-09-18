@@ -12,6 +12,7 @@
 
 import sys
 import csv
+import collections
 import datetime
 import json #* for testing/writing out dict to file; can remove later
 import copy
@@ -28,12 +29,8 @@ def check_clean(this_dict):
     """
     result = copy.deepcopy(this_dict)
 
-    if len(result.items()) <= 0:
-        raise ValueError("\nERROR: Cannot find rows for processing. Please inspect the file for possible issues.\n")
-
     #enforce data types
-    edit_count = 0
-    for line_num, values_dict in result.items():
+    for values_dict in result.values():
 
         #string values
         for entry in [
@@ -45,7 +42,6 @@ def check_clean(this_dict):
 
             if (values_dict[entry].isspace()) or (len(values_dict[entry]) == 0):
                 values_dict[entry] = None
-                edit_count += 1
                 continue
 
             values_dict[entry] = values_dict[entry].strip().lower()
@@ -56,21 +52,14 @@ def check_clean(this_dict):
                 values_dict[entry] = None
                 edit_count += 1
             else:
-                values_dict[entry] = datetime.datetime.strptime(values_dict[entry], "%m/%d/%Y %H:%M")
-
-        #float values
-        for entry in ["reported value concentration avg", "reported value concentration max"]:
-            # if (values_dict[entry] == "CODE=N") or (values_dict[entry] == "(empty)") or (len(values_dict[entry]) == 0):
-            #     values_dict[entry] = None
-            #     edit_count += 1
-            # else:
-            #     try:
-            #         values_dict[entry] = float(values_dict[entry])
-            #     except Exception as e: #! how to handle conversion of exceptions? '<5', 'PA682', or errors like '15..5'?
-            #         print(line_num, entry, e)
-            #         print("*"*8)
-            values_dict[entry] = values_dict[entry]
-
+                try:
+                    values_dict[entry] = datetime.datetime.strptime(values_dict[entry], "%m/%d/%Y %H:%M")
+                except:
+                    try:
+                        values_dict[entry] = datetime.datetime.strptime(values_dict[entry], "%m/%d/%Y") #* try without hours, mins
+                    except:
+                        raise ValueError("\nERROR: Cannot process value in Mon. Period Start Date.\nCheck source file.\n")
+        
     return result
 
 def load_report(this_file):
@@ -93,31 +82,40 @@ def load_report(this_file):
         "Concentrated Average Stat Base",   #string
         "Concentration Maximum Stat Base",  #string
         "Mon. Period Start Date",           #date
-        "Reported Value Concentration Avg", #float, CODE=N, (empty), <5
-        "Reported Value Concentration Max"  #float, CODE=N, (empty), <5
+        "Reported Value Concentration Avg", #float
+        "Reported Value Concentration Max"  #float
     ]
 
     with open(this_file, "r") as infile:
         HEADER = next(infile)
         HEADER_split = [i.lower() for i in HEADER.split(",")]
-        line_num = 2 #to keep numbering consistent w csv file
-        reader = csv.reader(infile) #load rest of lines with reader
+
+        #* verify all keys are in header
+        for entry in THESE_KEYS:
+            if entry.lower() in HEADER_split:
+                continue
+            else:
+                raise ValueError(f"{entry} not found in {this_file}")
+
+        line_num = 2 #* to keep numbering consistent w csv file
+        reader = csv.reader(infile)
         for row in reader:
             line_dict = dict(zip(HEADER_split, row))
-            line_dict_sub = {key:value for key,value in line_dict.items() if key in [entry.lower() for entry in THESE_KEYS]} #only keep k-v if k is in THESE_COLS
+            line_dict_sub = {key:value for key,value in line_dict.items() if key in [entry.lower() for entry in THESE_KEYS]} #* only keep k-v if k is in THESE_COLS
             this_file_dict[line_num] = line_dict_sub
             line_num += 1
 
-    # with open("this_file_dict.txt", "w") as outfile:
-    #     outfile.write(json.dumps(this_file_dict, indent=4, sort_keys=True)) #* used for spot checking loading of file
+        #* verify each col has at least one value in it
+        c = collections.Counter()
+        for row, entry in this_file_dict.items():
+            for k, v in entry.items():
+                if len(v)>0:
+                    c.update([k])
+        for entry in THESE_KEYS:
+            if c[entry.lower()]==0:
+                raise ValueError(f"No values found in '{entry}' column.")
 
-    #spot check this_file_dict & clean up values in this_file_dict (e.g. enforce data types)
-    result = check_clean(this_file_dict)
-
-    # with open("result.txt", "w") as outfile:
-    #     outfile.write(json.dumps(result, indent=4, sort_keys=True, default=str)) #* used for spot checking result of check_clean()
-
-    return result
+    return this_file_dict
 
 def get_values(dict_clean):
     """
@@ -320,7 +318,8 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         try:
             fname = sys.argv[1]
-            export_values(get_values(load_report(fname)), orig_fname=fname)
+            # export_values(get_values(load_report(fname)), orig_fname=fname)
+            export_values(get_values(check_clean(load_report(fname))), orig_fname=fname)
         except Exception as e:
             print(e)
     else:
