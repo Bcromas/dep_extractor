@@ -93,7 +93,7 @@ def load_report(this_file):
             if entry.lower() in HEADER_split:
                 continue
             else:
-                raise ValueError(f"{entry} not found in {this_file}")
+                raise ValueError(f'\nERROR: {entry} not found in {this_file}\n')
 
         line_num = 2 #* to keep numbering consistent w csv file
         reader = csv.reader(infile)
@@ -111,7 +111,7 @@ def load_report(this_file):
                     c.update([k])
         for entry in THESE_KEYS:
             if c[entry.lower()]==0:
-                raise ValueError(f"No values found in '{entry}' column.")
+                raise ValueError(f'\nERROR: No values found in "{entry}" column.\n')
 
     return this_file_dict
 
@@ -129,9 +129,11 @@ def get_values(dict_clean):
     dates_used = [] # To hold the dates for all temp. & pH data points used
 
     dict_clean_sub = {}
-    for main_key, main_value in dict_clean.items():
+    for main_key, main_value in dict_clean.items(): # main_key is the row num, main_value is the row's entries as key-value pairs
         if main_value["sample point description"] == "effluent gross value":
             dict_clean_sub[main_key] = main_value
+
+    assert len(dict_clean_sub.keys()) > 0,'''\nERROR: No "Effluent Gross Value" entries found in 'Sample Point Description'. Please check file.\n'''
 
     ######################## 
     ## Temperature Values ##
@@ -147,7 +149,7 @@ def get_values(dict_clean):
     
     temp_summer_list_sort = sorted(temp_summer_list, key=lambda x: x["mon. period start date"], reverse=True)
     temp_winter_list_sort = sorted(temp_winter_list, key=lambda x: x["mon. period start date"], reverse=True)
-    temp_summer_values = [i["reported value concentration avg"] for i in temp_summer_list_sort][:20] #* can capture more dict values here to validate results
+    temp_summer_values = [i["reported value concentration avg"] for i in temp_summer_list_sort][:20]
     dates_used.extend([i["mon. period start date"] for i in temp_summer_list_sort][:20]) # collect the dates related to the values captured
     temp_winter_values = [i["reported value concentration avg"] for i in temp_winter_list_sort][:10]
     dates_used.extend([i["mon. period start date"] for i in temp_winter_list_sort][:10])
@@ -166,7 +168,7 @@ def get_values(dict_clean):
 
     ph_summer_list_sort = sorted(ph_summer_list, key=lambda x: x["mon. period start date"], reverse=True)
     ph_winter_list_sort = sorted(ph_winter_list, key=lambda x: x["mon. period start date"], reverse=True)
-    ph_summer_values = [i["reported value concentration max"] for i in ph_summer_list_sort][:30] #* can capture more dict values here to validate results
+    ph_summer_values = [i["reported value concentration max"] for i in ph_summer_list_sort][:30]
     dates_used.extend([i["mon. period start date"] for i in ph_summer_list_sort][:30]) # collect the dates related to the values captured
     ph_winter_values = [i["reported value concentration max"] for i in ph_winter_list_sort][:30]
     dates_used.extend([i["mon. period start date"] for i in ph_winter_list_sort][:30])
@@ -187,7 +189,7 @@ def get_values(dict_clean):
 
     n_summer_chronic_list_sort = sorted(n_summer_chronic_list, key=lambda x: x["mon. period start date"], reverse=True)
     n_winter_chronic_list_sort = sorted(n_winter_chronic_list, key=lambda x: x["mon. period start date"], reverse=True)
-    n_summer_chronic_values = [i["reported value concentration avg"] for i in n_summer_chronic_list_sort][:18] #* can capture more dict values here to validate results
+    n_summer_chronic_values = [i["reported value concentration avg"] for i in n_summer_chronic_list_sort][:18]
     n_winter_chronic_values = [i["reported value concentration avg"] for i in n_winter_chronic_list_sort][:18]
     
     n_summer_chronic_nums = []
@@ -208,7 +210,7 @@ def get_values(dict_clean):
         n_summer_chronic_max = max(n_summer_chronic_nums)
         n_winter_chronic_max = max(n_winter_chronic_nums)
     except:
-        raise ValueError("Cannot find values for summer or winter chronic Ammonia.")
+        raise ValueError('\nERROR: Cannot find values for summer or winter chronic Ammonia.\n')
 
     #acute values
     n_summer_acute_list = [] #May to Oct; max 18 values
@@ -222,7 +224,7 @@ def get_values(dict_clean):
 
     n_summer_acute_list_sort = sorted(n_summer_acute_list, key=lambda x: x["mon. period start date"], reverse=True)
     n_winter_acute_list_sort = sorted(n_winter_acute_list, key=lambda x: x["mon. period start date"], reverse=True)
-    n_summer_acute_values = [i["reported value concentration max"] for i in n_summer_acute_list_sort][:18] #* can capture more dict values here to validate results
+    n_summer_acute_values = [i["reported value concentration max"] for i in n_summer_acute_list_sort][:18]
     n_winter_acute_values = [i["reported value concentration max"] for i in n_winter_acute_list_sort][:18]
     
     n_summer_acute_nums = []
@@ -288,7 +290,7 @@ def export_values(found_values, orig_fname):
         for i in found_values["pH summer values"]:
             outfile.write(f"\n,{counter}:,{i}")
             counter += 1
-        outfile.write("\nn")
+        outfile.write("\n\n")
 
         outfile.write("pH winter values")
         counter = 1

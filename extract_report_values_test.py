@@ -9,7 +9,7 @@ class Test_load_report(unittest.TestCase):
     """
 
     def test_good_csv(self):
-        csv = "test_csvs/test.csv"
+        csv = 'test_csvs/test.csv'
         x = load_report(csv)
         x_rand_item = random.choice(list(x.items())) # this is a tuple
         x_rand_key = x_rand_item[0]
@@ -19,29 +19,29 @@ class Test_load_report(unittest.TestCase):
         self.assertGreater(len(x.keys()), 0) # dict isn't empty
         self.assertIsInstance(x_rand_key, int)
         self.assertIsInstance(x_rand_vals, dict)
-        self.assertIn("Sample Point Description".lower(),x_rand_vals.keys())
-        self.assertIn("DMR Parameter Description Abbrv.".lower(),x_rand_vals.keys())
-        self.assertIn("Concentrated Average Stat Base".lower(),x_rand_vals.keys())
-        self.assertIn("Concentration Maximum Stat Base".lower(),x_rand_vals.keys())
-        self.assertIn("Mon. Period Start Date".lower(),x_rand_vals.keys())
-        self.assertIn("Reported Value Concentration Avg".lower(),x_rand_vals.keys())
-        self.assertIn("Reported Value Concentration Max".lower(),x_rand_vals.keys())
+        self.assertIn('Sample Point Description'.lower(),x_rand_vals.keys())
+        self.assertIn('DMR Parameter Description Abbrv.'.lower(),x_rand_vals.keys())
+        self.assertIn('Concentrated Average Stat Base'.lower(),x_rand_vals.keys())
+        self.assertIn('Concentration Maximum Stat Base'.lower(),x_rand_vals.keys())
+        self.assertIn('Mon. Period Start Date'.lower(),x_rand_vals.keys())
+        self.assertIn('Reported Value Concentration Avg'.lower(),x_rand_vals.keys())
+        self.assertIn('Reported Value Concentration Max'.lower(),x_rand_vals.keys())
 
     def test_missing_col(self):
 
-        csv = "test_csvs/test_missing_col.csv" # Missing col 'Sample Point Description'
+        csv = 'test_csvs/test_missing_col.csv' # Missing col 'Sample Point Description'
         with self.assertRaises(ValueError):
             load_report(csv)      
 
     def test_misspelled_col(self):
         
-        csv = "test_csvs/test_misspelled_col.csv" # Misspelled col 'Concentration Maximum Stat Base' as "Concentracion Maximum Stat Base"
+        csv = 'test_csvs/test_misspelled_col.csv' # Misspelled col 'Concentration Maximum Stat Base' as "Concentracion Maximum Stat Base"
         with self.assertRaises(ValueError):
             load_report(csv)
 
     def test_empty_col(self):
 
-        csv = "test_csvs/test_empty_col.csv" # Col 'Mon. Period Start Date' is empty
+        csv = 'test_csvs/test_empty_col.csv' # Col 'Mon. Period Start Date' is empty
         with self.assertRaises(ValueError):
             load_report(csv)
 
@@ -92,13 +92,14 @@ class Test_get_values(unittest.TestCase):
     """
 
     def test_bad_sample_pt_desc(self):
-        csv = "test_csvs/test_sample_pt_desc.csv" # missing 'effluent gross value' in 'sample point description' col
-        with self.assertRaises(ValueError):
-            x = get_values(load_report(csv))
+        csv = 'test_csvs/test_sample_pt_desc.csv' # missing 'effluent gross value' in 'sample point description' col
+        with self.assertRaises(AssertionError):
+            x = get_values(check_clean(load_report(csv)))
 
     def test_short_input(self):
-        pass
-
+        csv = 'test_csvs/test_short_input.csv'
+        x = get_values(check_clean(load_report(csv)))
+        
 class Test_export_values(unittest.TestCase):
     """
     Test export_values().
