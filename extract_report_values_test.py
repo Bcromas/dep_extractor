@@ -92,23 +92,9 @@ class Test_get_values(unittest.TestCase):
     """
 
     def test_bad_sample_pt_desc(self):
-        # create dict where either the col 'sample point description' doesn't have value of "effluent gross value"
-        this_dict = {
-            1211:
-            {
-                'mon. period start date': '8/1/2016',
-                'dmr parameter description abbrv.': 'Flow, In Conduit or Thru Treatment Plant', 
-                'sample point description': '', # missing val
-                'reported value concentration avg': '', 
-                'concentrated average stat base': '', 
-                'reported value concentration max': '13', 
-                'concentration maximum stat base': '0.9'
-            }
-        }
-        x = get_values(this_dict)
-        
-        self.assertIsInstance(x, dict) # returns a dict
-        self.assertGreater(len(x.keys()), 0) # dict isn't empty       
+        csv = "test_csvs/test_sample_pt_desc.csv" # missing 'effluent gross value' in 'sample point description' col
+        with self.assertRaises(ValueError):
+            x = get_values(load_report(csv))
 
     def test_short_input(self):
         pass

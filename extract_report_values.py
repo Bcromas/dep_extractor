@@ -14,7 +14,6 @@ import sys
 import csv
 import collections
 import datetime
-import json #* for testing/writing out dict to file; can remove later
 import copy
 
 def check_clean(this_dict):
@@ -25,12 +24,12 @@ def check_clean(this_dict):
         this_dict - dictionary; to be spot checked & values updated.
 
     Returns:
-        result - dictionary; edited version of this_dict.
+        this_dict_updated - dictionary; edited version of this_dict.
     """
-    result = copy.deepcopy(this_dict)
+    this_dict_updated = copy.deepcopy(this_dict)
 
     #enforce data types
-    for values_dict in result.values():
+    for values_dict in this_dict_updated.values():
 
         #string values
         for entry in [
@@ -50,7 +49,6 @@ def check_clean(this_dict):
         for entry in ["mon. period start date"]:
             if len(values_dict[entry]) == 0:
                 values_dict[entry] = None
-                edit_count += 1
             else:
                 try:
                     values_dict[entry] = datetime.datetime.strptime(values_dict[entry], "%m/%d/%Y %H:%M")
@@ -60,7 +58,7 @@ def check_clean(this_dict):
                     except:
                         raise ValueError("\nERROR: Cannot process value in Mon. Period Start Date.\nCheck source file.\n")
         
-    return result
+    return this_dict_updated
 
 def load_report(this_file):
     """
@@ -70,7 +68,7 @@ def load_report(this_file):
         this_file - string; the file name provided by user through the command line.
 
     Returns:
-        result - dictionary; a cleaned, updated, & shortened dictionary based on this_file.
+        this_file_dict - dictionary; a cleaned, updated, & shortened dictionary based on this_file.
     """
 
     this_file_dict = {} #dictionary of dictionaries representing this_file; keys = line_num, values = dictionary
@@ -125,7 +123,7 @@ def get_values(dict_clean):
         dict_clean - dictionary; contains a cleaned & updated subset of values from original input file.
 
     Returns:
-        result - dictionary; the values retrieved from dict_clean.
+        extracted_vals - dictionary; the values retrieved from dict_clean.
     """
 
     dates_used = [] # To hold the dates for all temp. & pH data points used
@@ -206,8 +204,11 @@ def get_values(dict_clean):
         except:
             n_winter_chronic_nums.append(0.0)
     
-    n_summer_chronic_max = max(n_summer_chronic_nums)
-    n_winter_chronic_max = max(n_winter_chronic_nums)
+    try:
+        n_summer_chronic_max = max(n_summer_chronic_nums)
+        n_winter_chronic_max = max(n_winter_chronic_nums)
+    except:
+        raise ValueError("Cannot find values for summer or winter chronic Ammonia.")
 
     #acute values
     n_summer_acute_list = [] #May to Oct; max 18 values
@@ -244,7 +245,7 @@ def get_values(dict_clean):
     min_date = min(dates_used).date()
     max_date = max(dates_used).date()
 
-    result = {
+    extracted_vals = {
         "Earliest date": str(min_date),
         "Most recent date": str(max_date),
         "pH summer values": ph_summer_values,
@@ -261,17 +262,23 @@ def get_values(dict_clean):
         "Ammonia winter chronic values": n_winter_chronic_values
     }
 
-    return result
+    return extracted_vals
 
 def export_values(found_values, orig_fname):
     """
-    Format & export the results to a .csv file. 
+    Format & export the results to a .csv file.
+
+    Args:
+        found_values - dictionary; values found & extracted from original input file.
+        orig_fname - string; name of the original input file.
+
+    Returns:
+        N/A - a file is created in the current working directory.
     """
     now = datetime.datetime.now()
     stamp = f"{now.year}_{now.month}_{now.day}_{now.hour}{now.minute}"
 
     with open(f"{stamp}_VALUES_FOR-{orig_fname}", "w") as outfile:
-        # outfile.write(json.dumps(found_values, indent=4, sort_keys=False, default=float))
         outfile.write(f"Export of values from: {orig_fname}\n")
         outfile.write(f"Dates used: {found_values['Earliest date']} to {found_values['Most recent date']}")
         outfile.write("\n\n")
