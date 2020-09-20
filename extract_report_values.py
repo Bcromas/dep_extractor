@@ -10,12 +10,12 @@
 #                                                                                    #   
 ######################################################################################
 
-import sys
-import csv
 import collections
-import datetime
-import json #* for testing/writing out dict to file; can remove later
 import copy
+import csv
+import datetime
+import os
+import sys
 
 def check_clean(this_dict):
     """
@@ -25,12 +25,12 @@ def check_clean(this_dict):
         this_dict - dictionary; to be spot checked & values updated.
 
     Returns:
-        result - dictionary; edited version of this_dict.
+        this_dict_updated - dictionary; edited version of this_dict.
     """
-    result = copy.deepcopy(this_dict)
+    this_dict_updated = copy.deepcopy(this_dict)
 
     #enforce data types
-    for values_dict in result.values():
+    for values_dict in this_dict_updated.values():
 
         #string values
         for entry in [
@@ -50,7 +50,6 @@ def check_clean(this_dict):
         for entry in ["mon. period start date"]:
             if len(values_dict[entry]) == 0:
                 values_dict[entry] = None
-                edit_count += 1
             else:
                 try:
                     values_dict[entry] = datetime.datetime.strptime(values_dict[entry], "%m/%d/%Y %H:%M")
@@ -60,7 +59,7 @@ def check_clean(this_dict):
                     except:
                         raise ValueError("\nERROR: Cannot process value in Mon. Period Start Date.\nCheck source file.\n")
         
-    return result
+    return this_dict_updated
 
 def load_report(this_file):
     """
@@ -70,7 +69,7 @@ def load_report(this_file):
         this_file - string; the file name provided by user through the command line.
 
     Returns:
-        result - dictionary; a cleaned, updated, & shortened dictionary based on this_file.
+        this_file_dict - dictionary; a cleaned, updated, & shortened dictionary based on this_file.
     """
 
     this_file_dict = {} #dictionary of dictionaries representing this_file; keys = line_num, values = dictionary
@@ -95,7 +94,7 @@ def load_report(this_file):
             if entry.lower() in HEADER_split:
                 continue
             else:
-                raise ValueError(f"{entry} not found in {this_file}")
+                raise ValueError(f'\nERROR: {entry} not found in {this_file}\n')
 
         line_num = 2 #* to keep numbering consistent w csv file
         reader = csv.reader(infile)
@@ -113,7 +112,7 @@ def load_report(this_file):
                     c.update([k])
         for entry in THESE_KEYS:
             if c[entry.lower()]==0:
-                raise ValueError(f"No values found in '{entry}' column.")
+                raise ValueError(f'\nERROR: No values found in "{entry}" column.\n')
 
     return this_file_dict
 
@@ -125,15 +124,17 @@ def get_values(dict_clean):
         dict_clean - dictionary; contains a cleaned & updated subset of values from original input file.
 
     Returns:
-        result - dictionary; the values retrieved from dict_clean.
+        extracted_vals - dictionary; the values retrieved from dict_clean.
     """
 
     dates_used = [] # To hold the dates for all temp. & pH data points used
 
     dict_clean_sub = {}
-    for main_key, main_value in dict_clean.items():
+    for main_key, main_value in dict_clean.items(): # main_key is the row num, main_value is the row's entries as key-value pairs
         if main_value["sample point description"] == "effluent gross value":
             dict_clean_sub[main_key] = main_value
+
+    assert len(dict_clean_sub.keys()) > 0,'''\nERROR: No "Effluent Gross Value" entries found in 'Sample Point Description'. Please check file.\n'''
 
     ######################## 
     ## Temperature Values ##
@@ -149,7 +150,7 @@ def get_values(dict_clean):
     
     temp_summer_list_sort = sorted(temp_summer_list, key=lambda x: x["mon. period start date"], reverse=True)
     temp_winter_list_sort = sorted(temp_winter_list, key=lambda x: x["mon. period start date"], reverse=True)
-    temp_summer_values = [i["reported value concentration avg"] for i in temp_summer_list_sort][:20] #* can capture more dict values here to validate results
+    temp_summer_values = [i["reported value concentration avg"] for i in temp_summer_list_sort][:20]
     dates_used.extend([i["mon. period start date"] for i in temp_summer_list_sort][:20]) # collect the dates related to the values captured
     temp_winter_values = [i["reported value concentration avg"] for i in temp_winter_list_sort][:10]
     dates_used.extend([i["mon. period start date"] for i in temp_winter_list_sort][:10])
@@ -168,7 +169,7 @@ def get_values(dict_clean):
 
     ph_summer_list_sort = sorted(ph_summer_list, key=lambda x: x["mon. period start date"], reverse=True)
     ph_winter_list_sort = sorted(ph_winter_list, key=lambda x: x["mon. period start date"], reverse=True)
-    ph_summer_values = [i["reported value concentration max"] for i in ph_summer_list_sort][:30] #* can capture more dict values here to validate results
+    ph_summer_values = [i["reported value concentration max"] for i in ph_summer_list_sort][:30]
     dates_used.extend([i["mon. period start date"] for i in ph_summer_list_sort][:30]) # collect the dates related to the values captured
     ph_winter_values = [i["reported value concentration max"] for i in ph_winter_list_sort][:30]
     dates_used.extend([i["mon. period start date"] for i in ph_winter_list_sort][:30])
@@ -189,7 +190,7 @@ def get_values(dict_clean):
 
     n_summer_chronic_list_sort = sorted(n_summer_chronic_list, key=lambda x: x["mon. period start date"], reverse=True)
     n_winter_chronic_list_sort = sorted(n_winter_chronic_list, key=lambda x: x["mon. period start date"], reverse=True)
-    n_summer_chronic_values = [i["reported value concentration avg"] for i in n_summer_chronic_list_sort][:18] #* can capture more dict values here to validate results
+    n_summer_chronic_values = [i["reported value concentration avg"] for i in n_summer_chronic_list_sort][:18]
     n_winter_chronic_values = [i["reported value concentration avg"] for i in n_winter_chronic_list_sort][:18]
     
     n_summer_chronic_nums = []
@@ -206,8 +207,11 @@ def get_values(dict_clean):
         except:
             n_winter_chronic_nums.append(0.0)
     
-    n_summer_chronic_max = max(n_summer_chronic_nums)
-    n_winter_chronic_max = max(n_winter_chronic_nums)
+    try:
+        n_summer_chronic_max = max(n_summer_chronic_nums)
+        n_winter_chronic_max = max(n_winter_chronic_nums)
+    except:
+        raise ValueError('\nERROR: Cannot find values for summer or winter chronic Ammonia.\n')
 
     #acute values
     n_summer_acute_list = [] #May to Oct; max 18 values
@@ -221,7 +225,7 @@ def get_values(dict_clean):
 
     n_summer_acute_list_sort = sorted(n_summer_acute_list, key=lambda x: x["mon. period start date"], reverse=True)
     n_winter_acute_list_sort = sorted(n_winter_acute_list, key=lambda x: x["mon. period start date"], reverse=True)
-    n_summer_acute_values = [i["reported value concentration max"] for i in n_summer_acute_list_sort][:18] #* can capture more dict values here to validate results
+    n_summer_acute_values = [i["reported value concentration max"] for i in n_summer_acute_list_sort][:18]
     n_winter_acute_values = [i["reported value concentration max"] for i in n_winter_acute_list_sort][:18]
     
     n_summer_acute_nums = []
@@ -244,7 +248,7 @@ def get_values(dict_clean):
     min_date = min(dates_used).date()
     max_date = max(dates_used).date()
 
-    result = {
+    extracted_vals = {
         "Earliest date": str(min_date),
         "Most recent date": str(max_date),
         "pH summer values": ph_summer_values,
@@ -261,17 +265,24 @@ def get_values(dict_clean):
         "Ammonia winter chronic values": n_winter_chronic_values
     }
 
-    return result
+    return extracted_vals
 
 def export_values(found_values, orig_fname):
     """
-    Format & export the results to a .csv file. 
+    Format & export the results to a .csv file.
+
+    Args:
+        found_values - dictionary; values found & extracted from original input file.
+        orig_fname - string; name of the original input file.
+
+    Returns:
+        N/A - a file is created in the current working directory.
     """
     now = datetime.datetime.now()
     stamp = f"{now.year}_{now.month}_{now.day}_{now.hour}{now.minute}"
+    filename = f"{stamp}_VALUES_FOR-{orig_fname}"
 
-    with open(f"{stamp}_VALUES_FOR-{orig_fname}", "w") as outfile:
-        # outfile.write(json.dumps(found_values, indent=4, sort_keys=False, default=float))
+    with open(filename, "w") as outfile:
         outfile.write(f"Export of values from: {orig_fname}\n")
         outfile.write(f"Dates used: {found_values['Earliest date']} to {found_values['Most recent date']}")
         outfile.write("\n\n")
@@ -281,7 +292,7 @@ def export_values(found_values, orig_fname):
         for i in found_values["pH summer values"]:
             outfile.write(f"\n,{counter}:,{i}")
             counter += 1
-        outfile.write("\nn")
+        outfile.write("\n\n")
 
         outfile.write("pH winter values")
         counter = 1
@@ -304,14 +315,25 @@ def export_values(found_values, orig_fname):
             counter += 1
         outfile.write("\n\n")
 
-        outfile.write("Ammonia summer acute max,Ammonia summer chronic max,Ammonia winter acute max,Ammonia winter chronic max\n") #the four titles in a row
-        outfile.write(f"{found_values['Ammonia summer acute max']},{found_values['Ammonia summer chronic max']},{found_values['Ammonia winter acute max']},{found_values['Ammonia winter chronic max']}")
-        outfile.write("\n\n")
+        #* Old way of printing this
+        # outfile.write("Ammonia summer acute max,Ammonia summer chronic max,Ammonia winter acute max,Ammonia winter chronic max\n") #the four titles in a row
+        # outfile.write(f"{found_values['Ammonia summer acute max']},{found_values['Ammonia summer chronic max']},{found_values['Ammonia winter acute max']},{found_values['Ammonia winter chronic max']}")
+        # outfile.write("\n\n")
 
-        for i in range(18):
-            outfile.write(f"{found_values['Ammonia summer acute values'][i]},{found_values['Ammonia summer chronic values'][i]},{found_values['Ammonia winter acute values'][i]},{found_values['Ammonia winter chronic values'][i]}")
-            outfile.write("\n")
-        
+        # for i in range(18):
+        #     outfile.write(f"{found_values['Ammonia summer acute values'][i]},{found_values['Ammonia summer chronic values'][i]},{found_values['Ammonia winter acute values'][i]},{found_values['Ammonia winter chronic values'][i]}")
+        #     outfile.write("\n")
+
+        #* New way of printing the above
+        outfile.write(f"Ammonia summer acute max,{found_values['Ammonia summer acute max']},,{','.join(found_values['Ammonia summer acute values'])}")
+        outfile.write("\n")
+        outfile.write(f"Ammonia summer chronic max,{found_values['Ammonia summer chronic max']},,{','.join(found_values['Ammonia summer chronic values'])}")
+        outfile.write("\n")
+        outfile.write(f"Ammonia winter acute max,{found_values['Ammonia winter acute max']},,{','.join(found_values['Ammonia winter acute values'])}")
+        outfile.write("\n")
+        outfile.write(f"Ammonia winter chronic max,{found_values['Ammonia winter chronic max']},,{','.join(found_values['Ammonia winter chronic values'])}")
+
+    assert os.path.exists(filename),"\nERROR: Could not create output file. Please check original file for possible issues.\n"
 
 if __name__ == "__main__":
 
@@ -324,5 +346,6 @@ if __name__ == "__main__":
     else:
         print("\nERROR: Please enter a file name for processing.\n")
 
-#TODO create test cases to check for scenarios where windows cannot find enough values & where values are blank
+#TODO remove 'addl' filtering on redundnat cols (the cols that caused a issue in Lisa's latest run)
+#TODO capture min & max dates for individual measures (not just the overall min & max dates used in output)
 #TODO fix floats with double decimals
