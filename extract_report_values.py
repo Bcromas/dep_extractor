@@ -346,4 +346,6 @@ if __name__ == "__main__":
     else:
         print("\nERROR: Please enter a file name for processing.\n")
 
+#TODO remove 'addl' filtering on redundnat cols (the cols that caused a issue in Lisa's latest run)
+#TODO capture min & max dates for individual measures (not just the overall min & max dates used in output)
 #TODO fix floats with double decimals

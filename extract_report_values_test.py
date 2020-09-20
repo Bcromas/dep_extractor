@@ -116,10 +116,7 @@ class Test_get_values(unittest.TestCase):
         self.assertIn('Ammonia winter chronic values', x.keys())
         
     #TODO what about possibility of duplicate data? Multiple rows with same data?
-class Test_export_values(unittest.TestCase):
-    """
-    Test export_values().
-    """
-    pass
+
+#* relying on assert in export_values() instead of creating test cases
 
 unittest.main(verbosity=2)
