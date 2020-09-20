@@ -10,11 +10,12 @@
 #                                                                                    #   
 ######################################################################################
 
-import sys
-import csv
 import collections
-import datetime
 import copy
+import csv
+import datetime
+import os
+import sys
 
 def check_clean(this_dict):
     """
@@ -279,8 +280,9 @@ def export_values(found_values, orig_fname):
     """
     now = datetime.datetime.now()
     stamp = f"{now.year}_{now.month}_{now.day}_{now.hour}{now.minute}"
+    filename = f"{stamp}_VALUES_FOR-{orig_fname}"
 
-    with open(f"{stamp}_VALUES_FOR-{orig_fname}", "w") as outfile:
+    with open(filename, "w") as outfile:
         outfile.write(f"Export of values from: {orig_fname}\n")
         outfile.write(f"Dates used: {found_values['Earliest date']} to {found_values['Most recent date']}")
         outfile.write("\n\n")
@@ -313,14 +315,25 @@ def export_values(found_values, orig_fname):
             counter += 1
         outfile.write("\n\n")
 
-        outfile.write("Ammonia summer acute max,Ammonia summer chronic max,Ammonia winter acute max,Ammonia winter chronic max\n") #the four titles in a row
-        outfile.write(f"{found_values['Ammonia summer acute max']},{found_values['Ammonia summer chronic max']},{found_values['Ammonia winter acute max']},{found_values['Ammonia winter chronic max']}")
-        outfile.write("\n\n")
+        #* Old way of printing this
+        # outfile.write("Ammonia summer acute max,Ammonia summer chronic max,Ammonia winter acute max,Ammonia winter chronic max\n") #the four titles in a row
+        # outfile.write(f"{found_values['Ammonia summer acute max']},{found_values['Ammonia summer chronic max']},{found_values['Ammonia winter acute max']},{found_values['Ammonia winter chronic max']}")
+        # outfile.write("\n\n")
 
-        for i in range(18):
-            outfile.write(f"{found_values['Ammonia summer acute values'][i]},{found_values['Ammonia summer chronic values'][i]},{found_values['Ammonia winter acute values'][i]},{found_values['Ammonia winter chronic values'][i]}")
-            outfile.write("\n")
-        
+        # for i in range(18):
+        #     outfile.write(f"{found_values['Ammonia summer acute values'][i]},{found_values['Ammonia summer chronic values'][i]},{found_values['Ammonia winter acute values'][i]},{found_values['Ammonia winter chronic values'][i]}")
+        #     outfile.write("\n")
+
+        #* New way of printing the above
+        outfile.write(f"Ammonia summer acute max,{found_values['Ammonia summer acute max']},,{','.join(found_values['Ammonia summer acute values'])}")
+        outfile.write("\n")
+        outfile.write(f"Ammonia summer chronic max,{found_values['Ammonia summer chronic max']},,{','.join(found_values['Ammonia summer chronic values'])}")
+        outfile.write("\n")
+        outfile.write(f"Ammonia winter acute max,{found_values['Ammonia winter acute max']},,{','.join(found_values['Ammonia winter acute values'])}")
+        outfile.write("\n")
+        outfile.write(f"Ammonia winter chronic max,{found_values['Ammonia winter chronic max']},,{','.join(found_values['Ammonia winter chronic values'])}")
+
+    assert os.path.exists(filename),"\nERROR: Could not create output file. Please check original file for possible issues.\n"
 
 if __name__ == "__main__":
 
@@ -333,5 +346,4 @@ if __name__ == "__main__":
     else:
         print("\nERROR: Please enter a file name for processing.\n")
 
-#TODO create test cases to check for scenarios where windows cannot find enough values & where values are blank
 #TODO fix floats with double decimals

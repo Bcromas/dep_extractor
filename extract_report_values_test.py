@@ -4,8 +4,8 @@ from extract_report_values import *
 
 class Test_load_report(unittest.TestCase):
     """
-    Test load_report() functionality for a "good" csv and a number of problematic scenarios 
-    including missing, misspelled, and empty columns.
+    Test load_report() functionality for a "good" csv & a number of problematic scenarios 
+    including missing, misspelled, & empty columns.
     """
 
     def test_good_csv(self):
@@ -47,7 +47,7 @@ class Test_load_report(unittest.TestCase):
 
 class Test_check_clean(unittest.TestCase):
     """
-    Test check_clean() functionality for a "good" dictionary and one with a problematic string for datetime conversion.
+    Test check_clean() functionality for a "good" dictionary & one with a problematic string for datetime conversion.
     """
 
     def test_good_dict(self):
@@ -99,7 +99,23 @@ class Test_get_values(unittest.TestCase):
     def test_short_input(self):
         csv = 'test_csvs/test_short_input.csv'
         x = get_values(check_clean(load_report(csv)))
+        self.assertIsInstance(x, dict) # returns a dict
+        self.assertIn('Earliest date', x.keys())
+        self.assertIn('Most recent date', x.keys())
+        self.assertIn('pH summer values', x.keys())
+        self.assertIn('pH winter values', x.keys())
+        self.assertIn('Temperature summer values', x.keys())
+        self.assertIn('Temperature winter values', x.keys())
+        self.assertIn('Ammonia summer acute max', x.keys())
+        self.assertIn('Ammonia summer acute values', x.keys())
+        self.assertIn('Ammonia summer chronic max', x.keys())
+        self.assertIn('Ammonia summer chronic values', x.keys())
+        self.assertIn('Ammonia winter acute max', x.keys())
+        self.assertIn('Ammonia winter acute values', x.keys())
+        self.assertIn('Ammonia winter chronic max', x.keys())
+        self.assertIn('Ammonia winter chronic values', x.keys())
         
+    #TODO what about possibility of duplicate data? Multiple rows with same data?
 class Test_export_values(unittest.TestCase):
     """
     Test export_values().
