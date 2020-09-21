@@ -258,7 +258,6 @@ def get_values(dict_clean):
 
     #####################
     ### Process Dates ###
-    #TODO loop here to process dates
 
     min_date = min(dates_used).date()
     max_date = max(dates_used).date()
