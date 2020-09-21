@@ -142,7 +142,7 @@ def get_values(dict_clean):
     temp_summer_list = [] #Jun to Sep; max 20 values
     temp_winter_list = [] #Apr & Nov; max 10 values
     for main_key, main_value in dict_clean_sub.items():
-        if (main_value["dmr parameter description abbrv."] == "temperature,  oc") & (main_value["concentrated average stat base"] == "01moav"):
+        if (main_value["dmr parameter description abbrv."] == "temperature,  oc"): # previousl also filtered by 'concentrated average stat base'
             if 6 <= main_value["mon. period start date"].month <= 9:
                 temp_summer_list.append(main_value)
             elif (main_value["mon. period start date"].month == 4) or (main_value["mon. period start date"].month == 11):
@@ -151,9 +151,11 @@ def get_values(dict_clean):
     temp_summer_list_sort = sorted(temp_summer_list, key=lambda x: x["mon. period start date"], reverse=True)
     temp_winter_list_sort = sorted(temp_winter_list, key=lambda x: x["mon. period start date"], reverse=True)
     temp_summer_values = [i["reported value concentration avg"] for i in temp_summer_list_sort][:20]
-    dates_used.extend([i["mon. period start date"] for i in temp_summer_list_sort][:20]) # collect the dates related to the values captured
+    temp_summer_dates =  [i["mon. period start date"] for i in temp_summer_list_sort][:20]
+    dates_used.extend(temp_summer_dates)
     temp_winter_values = [i["reported value concentration avg"] for i in temp_winter_list_sort][:10]
-    dates_used.extend([i["mon. period start date"] for i in temp_winter_list_sort][:10])
+    temp_winter_dates = [i["mon. period start date"] for i in temp_winter_list_sort][:10]
+    dates_used.extend(temp_winter_dates)
     
     ###############
     ## pH Values ##
@@ -161,7 +163,7 @@ def get_values(dict_clean):
     ph_summer_list = [] #May to Oct; max 30 values
     ph_winter_list = [] #Nov to Apr; max 30 values
     for main_key, main_value in dict_clean_sub.items():
-        if (main_value["dmr parameter description abbrv."] == "ph") & (main_value["concentration maximum stat base"] == "01rpmx"):
+        if (main_value["dmr parameter description abbrv."] == "ph"): # previously also filtered by 'concentration maximum stat base'
             if 5 <= main_value["mon. period start date"].month <= 10:
                 ph_summer_list.append(main_value)
             elif (11 <= main_value["mon. period start date"].month <= 12) or (1 <= main_value["mon. period start date"].month <= 4):
@@ -170,19 +172,20 @@ def get_values(dict_clean):
     ph_summer_list_sort = sorted(ph_summer_list, key=lambda x: x["mon. period start date"], reverse=True)
     ph_winter_list_sort = sorted(ph_winter_list, key=lambda x: x["mon. period start date"], reverse=True)
     ph_summer_values = [i["reported value concentration max"] for i in ph_summer_list_sort][:30]
-    dates_used.extend([i["mon. period start date"] for i in ph_summer_list_sort][:30]) # collect the dates related to the values captured
+    ph_summer_dates = [i["mon. period start date"] for i in ph_summer_list_sort][:30] # collect the dates related to the values captured
+    dates_used.extend(ph_summer_dates)
     ph_winter_values = [i["reported value concentration max"] for i in ph_winter_list_sort][:30]
-    dates_used.extend([i["mon. period start date"] for i in ph_winter_list_sort][:30])
+    ph_winter_dates = [i["mon. period start date"] for i in ph_winter_list_sort][:30]
+    dates_used.extend(ph_winter_dates)
 
     ####################
     ## Ammonia Values ##
-    #TODO streamline code below, if user can understand simplified version
 
     #chronic values
     n_summer_chronic_list = [] #May to Oct; max 18 values
     n_winter_chronic_list = [] #Nov to Apr; max 18 values
     for main_key, main_value in dict_clean_sub.items():
-        if (main_value["dmr parameter description abbrv."] == "nitrogen, ammonia total (as n)") & (main_value["concentrated average stat base"] == "01moav"): #average = "chronic"
+        if (main_value["dmr parameter description abbrv."] == "nitrogen, ammonia total (as n)"): #average = "chronic"; previously also filtered by 'concentrated average stat base'
             if 5 <= main_value["mon. period start date"].month <= 10:
                 n_summer_chronic_list.append(main_value)
             elif (11 <= main_value["mon. period start date"].month <= 12) or (1 <= main_value["mon. period start date"].month <= 4):
@@ -191,7 +194,11 @@ def get_values(dict_clean):
     n_summer_chronic_list_sort = sorted(n_summer_chronic_list, key=lambda x: x["mon. period start date"], reverse=True)
     n_winter_chronic_list_sort = sorted(n_winter_chronic_list, key=lambda x: x["mon. period start date"], reverse=True)
     n_summer_chronic_values = [i["reported value concentration avg"] for i in n_summer_chronic_list_sort][:18]
+    n_summer_chronic_dates = [i["mon. period start date"] for i in n_summer_chronic_list_sort][:18]
+    dates_used.extend(n_summer_chronic_dates)
     n_winter_chronic_values = [i["reported value concentration avg"] for i in n_winter_chronic_list_sort][:18]
+    n_winter_chronic_dates = [i["mon. period start date"] for i in n_winter_chronic_list_sort][:18]
+    dates_used.extend(n_winter_chronic_dates)
     
     n_summer_chronic_nums = []
     for i in n_summer_chronic_values:
@@ -217,7 +224,7 @@ def get_values(dict_clean):
     n_summer_acute_list = [] #May to Oct; max 18 values
     n_winter_acute_list = [] #Nov to Apr; max 18 values
     for main_key, main_value in dict_clean_sub.items():
-        if (main_value["dmr parameter description abbrv."] == "nitrogen, ammonia total (as n)") & (main_value["concentration maximum stat base"] == "01damx"): #max = "acute"
+        if (main_value["dmr parameter description abbrv."] == "nitrogen, ammonia total (as n)"): #max = "acute"; previously also filtered by 'concentration maximum stat base'
             if 5 <= main_value["mon. period start date"].month <= 10:
                 n_summer_acute_list.append(main_value)
             elif (11 <= main_value["mon. period start date"].month <= 12) or (1 <= main_value["mon. period start date"].month <= 4):
@@ -226,7 +233,11 @@ def get_values(dict_clean):
     n_summer_acute_list_sort = sorted(n_summer_acute_list, key=lambda x: x["mon. period start date"], reverse=True)
     n_winter_acute_list_sort = sorted(n_winter_acute_list, key=lambda x: x["mon. period start date"], reverse=True)
     n_summer_acute_values = [i["reported value concentration max"] for i in n_summer_acute_list_sort][:18]
+    n_summer_acute_dates = [i["mon. period start date"] for i in n_summer_acute_list_sort][:18]
+    dates_used.extend(n_summer_acute_dates)
     n_winter_acute_values = [i["reported value concentration max"] for i in n_winter_acute_list_sort][:18]
+    n_winter_acute_dates = [i["mon. period start date"] for i in n_winter_acute_list_sort][:18]
+    dates_used.extend(n_winter_acute_dates)
     
     n_summer_acute_nums = []
     for i in n_summer_acute_values:
@@ -245,24 +256,58 @@ def get_values(dict_clean):
     n_summer_acute_max = max(n_summer_acute_nums)
     n_winter_acute_max = max(n_winter_acute_nums)
 
+    #####################
+    ### Process Dates ###
+    #TODO loop here to process dates
+
     min_date = min(dates_used).date()
     max_date = max(dates_used).date()
 
+    found_dates = {
+        "temp_summer_dates":temp_summer_dates,
+        "temp_winter_dates":temp_winter_dates,
+        "ph_summer_dates":ph_summer_dates,
+        "ph_winter_dates":ph_winter_dates,
+        "n_summer_chronic_dates":n_summer_chronic_dates,
+        "n_winter_chronic_dates":n_winter_chronic_dates,
+        "n_summer_acute_dates":n_summer_acute_dates,
+        "n_winter_acute_dates":n_winter_acute_dates
+        }
+
+    dates_dict = {}
+    for name, var in found_dates.items():
+        this_name = name.split("_dates")[0]
+
+        for method_name, method in {"min":min, "max":max}.items():
+            try:
+                dates_dict[this_name+"_date_"+method_name] = method(var).date()
+            except:
+                dates_dict[this_name+"_date_"+method_name] = "N/A"
+        
+    # Gather all values
     extracted_vals = {
         "Earliest date": str(min_date),
         "Most recent date": str(max_date),
         "pH summer values": ph_summer_values,
+        "pH summer dates": (dates_dict["ph_summer_date_min"], dates_dict["ph_summer_date_max"]),
         "pH winter values": ph_winter_values,
+        "pH winter dates": (dates_dict["ph_winter_date_min"], dates_dict["ph_winter_date_max"]),
         "Temperature summer values": temp_summer_values,
+        "Temperature summer dates": (dates_dict["temp_summer_date_min"], dates_dict["temp_summer_date_max"]),
         "Temperature winter values": temp_winter_values,
+        "Temperature winter dates": (dates_dict["temp_winter_date_min"], dates_dict["temp_winter_date_max"]),
         "Ammonia summer acute max": n_summer_acute_max,
         "Ammonia summer acute values": n_summer_acute_values,
+        "Ammonia summer acute dates": (dates_dict["n_summer_acute_date_min"], dates_dict["n_summer_acute_date_max"]),
         "Ammonia summer chronic max": n_summer_chronic_max,
         "Ammonia summer chronic values": n_summer_chronic_values,
+        "Ammonia summer chronic dates": (dates_dict["n_summer_chronic_date_min"], dates_dict["n_summer_chronic_date_max"]),
         "Ammonia winter acute max": n_winter_acute_max,
         "Ammonia winter acute values": n_winter_acute_values,
+        "Ammonia winter acute dates": (dates_dict["n_winter_acute_date_min"], dates_dict["n_winter_acute_date_max"]),
         "Ammonia winter chronic max": n_winter_chronic_max,
-        "Ammonia winter chronic values": n_winter_chronic_values
+        "Ammonia winter chronic values": n_winter_chronic_values,
+        "Ammonia winter chronic dates": (dates_dict["n_winter_chronic_date_min"], dates_dict["n_winter_chronic_date_max"]),
     }
 
     return extracted_vals
@@ -288,6 +333,8 @@ def export_values(found_values, orig_fname):
         outfile.write("\n\n")
 
         outfile.write("pH summer values")
+        outfile.write("\n")
+        outfile.write(f"Dates used: {found_values['pH summer dates'][0]} to {found_values['pH summer dates'][1]}")
         counter = 1
         for i in found_values["pH summer values"]:
             outfile.write(f"\n,{counter}:,{i}")
@@ -295,6 +342,8 @@ def export_values(found_values, orig_fname):
         outfile.write("\n\n")
 
         outfile.write("pH winter values")
+        outfile.write("\n")
+        outfile.write(f"Dates used: {found_values['pH winter dates'][0]} to {found_values['pH winter dates'][1]}")
         counter = 1
         for i in found_values["pH winter values"]:
             outfile.write(f"\n,{counter}:,{i}")
@@ -302,6 +351,8 @@ def export_values(found_values, orig_fname):
         outfile.write("\n\n")
 
         outfile.write("Temperature summer values")
+        outfile.write("\n")
+        outfile.write(f"Dates used: {found_values['Temperature summer dates'][0]} to {found_values['Temperature summer dates'][1]}")
         counter = 1
         for i in found_values["Temperature summer values"]:
             outfile.write(f"\n,{counter}:,{i}")
@@ -309,29 +360,21 @@ def export_values(found_values, orig_fname):
         outfile.write("\n\n")
 
         outfile.write("Temperature winter values")
+        outfile.write("\n")
+        outfile.write(f"Dates used: {found_values['Temperature winter dates'][0]} to {found_values['Temperature winter dates'][1]}")
         counter = 1
         for i in found_values["Temperature winter values"]:
             outfile.write(f"\n,{counter}:,{i}")
             counter += 1
         outfile.write("\n\n")
 
-        #* Old way of printing this
-        # outfile.write("Ammonia summer acute max,Ammonia summer chronic max,Ammonia winter acute max,Ammonia winter chronic max\n") #the four titles in a row
-        # outfile.write(f"{found_values['Ammonia summer acute max']},{found_values['Ammonia summer chronic max']},{found_values['Ammonia winter acute max']},{found_values['Ammonia winter chronic max']}")
-        # outfile.write("\n\n")
-
-        # for i in range(18):
-        #     outfile.write(f"{found_values['Ammonia summer acute values'][i]},{found_values['Ammonia summer chronic values'][i]},{found_values['Ammonia winter acute values'][i]},{found_values['Ammonia winter chronic values'][i]}")
-        #     outfile.write("\n")
-
-        #* New way of printing the above
-        outfile.write(f"Ammonia summer acute max,{found_values['Ammonia summer acute max']},,{','.join(found_values['Ammonia summer acute values'])}")
+        outfile.write(f"Ammonia summer acute max,{found_values['Ammonia summer acute max']},,{','.join(found_values['Ammonia summer acute values'])},,Dates used: {found_values['Ammonia summer acute dates'][0]} to {found_values['Ammonia summer acute dates'][1]}")
         outfile.write("\n")
-        outfile.write(f"Ammonia summer chronic max,{found_values['Ammonia summer chronic max']},,{','.join(found_values['Ammonia summer chronic values'])}")
+        outfile.write(f"Ammonia summer chronic max,{found_values['Ammonia summer chronic max']},,{','.join(found_values['Ammonia summer chronic values'])},,Dates used: {found_values['Ammonia summer chronic dates'][0]} to {found_values['Ammonia summer chronic dates'][1]}")
         outfile.write("\n")
-        outfile.write(f"Ammonia winter acute max,{found_values['Ammonia winter acute max']},,{','.join(found_values['Ammonia winter acute values'])}")
+        outfile.write(f"Ammonia winter acute max,{found_values['Ammonia winter acute max']},,{','.join(found_values['Ammonia winter acute values'])},,Dates used: {found_values['Ammonia winter acute dates'][0]} to {found_values['Ammonia winter acute dates'][1]}")
         outfile.write("\n")
-        outfile.write(f"Ammonia winter chronic max,{found_values['Ammonia winter chronic max']},,{','.join(found_values['Ammonia winter chronic values'])}")
+        outfile.write(f"Ammonia winter chronic max,{found_values['Ammonia winter chronic max']},,{','.join(found_values['Ammonia winter chronic values'])},,Dates used: {found_values['Ammonia winter chronic dates'][0]} to {found_values['Ammonia winter chronic dates'][1]}")
 
     assert os.path.exists(filename),"\nERROR: Could not create output file. Please check original file for possible issues.\n"
 
@@ -345,7 +388,3 @@ if __name__ == "__main__":
             print(e)
     else:
         print("\nERROR: Please enter a file name for processing.\n")
-
-#TODO remove 'addl' filtering on redundnat cols (the cols that caused a issue in Lisa's latest run)
-#TODO capture min & max dates for individual measures (not just the overall min & max dates used in output)
-#TODO fix floats with double decimals
